@@ -5,7 +5,7 @@ import { navItems, type NavSection } from '../data/resume'
 interface NavbarProps {
   activeSection: NavSection
   onNavigate: (section: NavSection) => void
-  variant?: 'sidebar' | 'inline'
+  isMobile?: boolean
 }
 
 const icons: Record<NavSection, typeof FaUser> = {
@@ -14,19 +14,17 @@ const icons: Record<NavSection, typeof FaUser> = {
   works: FaPaintbrush,
 }
 
-export function Navbar({ activeSection, onNavigate, variant = 'inline' }: NavbarProps) {
-  const isSidebar = variant === 'sidebar'
-
+export function Navbar({ activeSection, onNavigate, isMobile = false }: NavbarProps) {
   return (
     <header
-      className={`shrink-0 bg-white ${
-        isSidebar
-          ? 'fixed left-3 top-1/2 z-30 w-[64px] -translate-y-1/2 rounded-lg shadow-[0_0_25px_rgba(0,0,0,0.08)] sm:left-4 sm:w-[72px]'
-          : 'flex w-[64px] items-center justify-center self-center border-r border-[#eee] sm:w-[72px]'
+      className={`z-30 rounded-xl bg-white shadow-[0_4px_30px_rgba(0,0,0,0.12)] ${
+        isMobile
+          ? 'fixed left-2 top-1/2 w-[52px] -translate-y-1/2 sm:left-3 sm:w-[56px] md:left-4 md:w-[60px]'
+          : 'relative w-[60px]'
       }`}
     >
-      <nav className={`flex h-full w-full ${isSidebar ? '' : 'items-center justify-center'}`}>
-        <ul className="flex w-full flex-col items-center justify-center py-2">
+      <nav>
+        <ul className="flex w-full flex-col items-center justify-center py-2 sm:py-3">
           {navItems.map((item) => {
             const Icon = icons[item.id]
             const isActive = activeSection === item.id
@@ -38,20 +36,20 @@ export function Navbar({ activeSection, onNavigate, variant = 'inline' }: Navbar
                   onClick={() => onNavigate(item.id)}
                   aria-label={item.label}
                   aria-current={isActive ? 'page' : undefined}
-                  className={`group flex w-full flex-col items-center px-2 py-3 text-xs font-medium uppercase transition-colors ${
-                    isActive ? 'text-accent' : 'text-[#323232] hover:text-accent'
+                  className={`group flex w-full flex-col items-center gap-0.5 px-1.5 py-2 text-xs font-medium uppercase transition-colors sm:gap-1 sm:px-2 sm:py-2.5 ${
+                    isActive ? 'text-accent' : 'text-[#666] hover:text-accent'
                   }`}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.92 }}
                 >
-                  <Icon className="mb-1 h-[28px] w-10 text-lg leading-[28px] sm:text-xl" />
-                  <span className="text-[10px] sm:text-[11px]">{item.label}</span>
+                  <Icon className="h-[17px] w-[17px] sm:h-[18px] sm:w-[18px] md:h-[20px] md:w-[20px]" />
+                  <span className="text-[8px] font-semibold tracking-wide sm:text-[9px] md:text-[10px]">{item.label}</span>
                 </motion.button>
                 {isActive && (
                   <motion.span
                     layoutId="nav-active-bg"
-                    className="pointer-events-none absolute inset-1 -z-10 rounded-md bg-gradient-to-b from-[#7ec8e3]/20 to-transparent"
-                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                    className="pointer-events-none absolute inset-1 -z-10 rounded-lg bg-gradient-to-b from-accent/10 to-transparent"
+                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                   />
                 )}
               </li>

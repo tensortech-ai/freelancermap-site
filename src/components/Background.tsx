@@ -1,81 +1,174 @@
+import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 
-const bubbles = Array.from({ length: 12 }, (_, i) => ({
-  id: i,
-  size: 20 + (i % 4) * 15,
-  left: `${(i * 8.5) % 100}%`,
-  delay: i * 1.5,
-  duration: 18 + (i % 5) * 4,
-}))
-
+// Floating soft-glow orbs for depth
 const orbs = [
-  { x: '10%', y: '20%', size: 300, duration: 20 },
-  { x: '70%', y: '60%', size: 250, duration: 25 },
-  { x: '40%', y: '80%', size: 200, duration: 18 },
+  { x: '8%',  y: '15%', size: 420, color: 'rgba(134,239,172,0.18)', duration: 22 },
+  { x: '65%', y: '55%', size: 360, color: 'rgba(96,165,250,0.13)',  duration: 28 },
+  { x: '35%', y: '75%', size: 300, color: 'rgba(167,243,208,0.15)', duration: 19 },
+  { x: '80%', y: '10%', size: 260, color: 'rgba(147,197,253,0.12)', duration: 24 },
 ]
+
+interface Particle {
+  x: number
+  y: number
+  vx: number
+  vy: number
+  radius: number
+  opacity: number
+}
+
+function AnimatedCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    let animId: number
+    let particles: Particle[] = []
+
+    const resize = () => {
+      canvas.width  = window.innerWidth
+      canvas.height = window.innerHeight
+      init()
+    }
+
+    const init = () => {
+      const count = Math.floor((canvas.width * canvas.height) / 14000)
+      particles = Array.from({ length: count }, () => ({
+        x:       Math.random() * canvas.width,
+        y:       Math.random() * canvas.height,
+        vx:      (Math.random() - 0.5) * 0.4,
+        vy:      (Math.random() - 0.5) * 0.4,
+        radius:  1.5 + Math.random() * 2,
+        opacity: 0.25 + Math.random() * 0.35,
+      }))
+    }
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+      // Connect nearby particles with lines
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx   = particles[i].x - particles[j].x
+          const dy   = particles[i].y - particles[j].y
+          const dist = Math.sqrt(dx * dx + dy * dy)
+          const maxDist = 130
+
+          if (dist < maxDist) {
+            const alpha = (1 - dist / maxDist) * 0.18
+            ctx.beginPath()
+            ctx.moveTo(particles[i].x, particles[i].y)
+            ctx.lineTo(particles[j].x, particles[j].y)
+            ctx.strokeStyle = `rgba(74,168,122,${alpha})`
+            ctx.lineWidth = 1
+            ctx.stroke()
+          }
+        }
+      }
+
+      // Draw dots
+      for (const p of particles) {
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(74,168,122,${p.opacity})`
+        ctx.fill()
+      }
+
+      // Move
+      for (const p of particles) {
+        p.x += p.vx
+        p.y += p.vy
+        if (p.x < 0 || p.x > canvas.width)  p.vx *= -1
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1
+      }
+
+      animId = requestAnimationFrame(draw)
+    }
+
+    resize()
+    draw()
+
+    window.addEventListener('resize', resize)
+    return () => {
+      cancelAnimationFrame(animId)
+      window.removeEventListener('resize', resize)
+    }
+  }, [])
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 h-full w-full"
+    />
+  )
+}
 
 export function Background() {
   return (
     <div
-      className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-gradient-to-br from-[#7ec8e3] via-[#a8d8f0] to-[#c5e8f7]"
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[#f0fdf4]"
       aria-hidden="true"
     >
-      {/* Slow gradient shift */}
-      <motion.div
-        className="absolute inset-0 bg-gradient-to-tr from-[#6bb6ff]/30 via-transparent to-[#b8e0ff]/40"
-        animate={{ opacity: [0.5, 0.8, 0.5] }}
-        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+      {/* Subtle grid pattern */}
+      <div
+        className="absolute inset-0 opacity-[0.035]"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(16,185,129,1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(16,185,129,1) 1px, transparent 1px)
+          `,
+          backgroundSize: '48px 48px',
+        }}
       />
 
-      {/* Floating orbs */}
+      {/* Animated particle canvas */}
+      <AnimatedCanvas />
+
+      {/* Soft glow orbs */}
       {orbs.map((orb, i) => (
         <motion.div
-          key={`orb-${i}`}
-          className="absolute rounded-full bg-white/20 blur-3xl"
-          style={{ width: orb.size, height: orb.size, left: orb.x, top: orb.y }}
-          animate={{
-            x: [0, 40, -30, 0],
-            y: [0, -50, 30, 0],
-            scale: [1, 1.15, 0.95, 1],
+          key={i}
+          className="absolute rounded-full blur-3xl"
+          style={{
+            width:      orb.size,
+            height:     orb.size,
+            left:       orb.x,
+            top:        orb.y,
+            background: orb.color,
           }}
-          transition={{ duration: orb.duration, repeat: Infinity, ease: 'easeInOut' }}
+          animate={{
+            x:     [0, 35, -25, 0],
+            y:     [0, -40,  25, 0],
+            scale: [1, 1.12, 0.94, 1],
+          }}
+          transition={{
+            duration:   orb.duration,
+            repeat:     Infinity,
+            ease:       'easeInOut',
+          }}
         />
       ))}
 
-      {/* Rising bubbles */}
-      <ul className="absolute inset-0 overflow-hidden">
-        {bubbles.map((b) => (
-          <motion.li
-            key={b.id}
-            className="absolute bottom-[-80px] block rounded-full bg-white/25 backdrop-blur-sm"
-            style={{ left: b.left, width: b.size, height: b.size }}
-            animate={{
-              y: [0, -1100],
-              x: [0, Math.sin(b.id) * 60, Math.cos(b.id) * 40, 0],
-              rotate: [0, 360],
-              opacity: [0, 0.6, 0.4, 0],
-            }}
-            transition={{
-              duration: b.duration,
-              repeat: Infinity,
-              delay: b.delay,
-              ease: 'linear',
-            }}
-          />
-        ))}
-      </ul>
+      {/* Drifting diagonal accent lines */}
+      <motion.div
+        className="absolute -left-1/4 top-1/4 h-px w-[150%] bg-gradient-to-r from-transparent via-emerald-300/20 to-transparent"
+        animate={{ x: ['-8%', '8%'] }}
+        transition={{ duration: 14, repeat: Infinity, repeatType: 'reverse', ease: 'easeInOut' }}
+      />
+      <motion.div
+        className="absolute -left-1/4 top-2/3 h-px w-[150%] bg-gradient-to-r from-transparent via-green-200/25 to-transparent"
+        animate={{ x: ['8%', '-8%'] }}
+        transition={{ duration: 18, repeat: Infinity, repeatType: 'reverse', ease: 'easeInOut' }}
+      />
 
-      {/* Drifting wave lines */}
-      <motion.div
-        className="absolute -left-1/4 top-1/3 h-px w-[150%] bg-gradient-to-r from-transparent via-white/30 to-transparent"
-        animate={{ x: ['-10%', '10%'] }}
-        transition={{ duration: 12, repeat: Infinity, repeatType: 'reverse', ease: 'easeInOut' }}
-      />
-      <motion.div
-        className="absolute -left-1/4 top-2/3 h-px w-[150%] bg-gradient-to-r from-transparent via-white/20 to-transparent"
-        animate={{ x: ['10%', '-10%'] }}
-        transition={{ duration: 15, repeat: Infinity, repeatType: 'reverse', ease: 'easeInOut' }}
-      />
+      {/* Corner accent blobs */}
+      <div className="absolute -right-20 -top-20 h-80 w-80 rounded-full bg-emerald-100/40 blur-2xl" />
+      <div className="absolute -bottom-24 -left-16 h-72 w-72 rounded-full bg-green-100/35 blur-2xl" />
     </div>
   )
 }
