@@ -56,11 +56,11 @@ export interface ResumeData {
 export const resumeData: ResumeData = {
   name: 'Jakob Steinbrück',
   titles: ['AI Solutions Engineer', 'Software Engineering & AI Systems'],
-  location: 'Berlin - Germany',
+  location: 'Nordwestmecklenburg - Germany',
   summary: `AI Solutions Engineer with 9 years of experience building production software and AI systems. I focus on correctness and practical engineering across APIs, databases, RAG pipelines, and full-stack applications. Recent work with Python/FastAPI, OpenAI APIs, RAG, AI agents, TypeScript/React, and cloud infrastructure has delivered clear results: 65% faster document search, 35% less manual support work, and 45% better system performance. I bring an engineering mindset to AI evaluation—understanding requirements, inspecting implementations, finding real failures, and explaining tradeoffs clearly.`,
   contact: {
     email: 'jakobsteinbruckwork@gmail.com',
-    location: 'Berlin, Germany',
+    location: 'Nordwestmecklenburg, Germany',
     nationality: 'German',
     linkLabel: 'Jakob Steinbruck',
   },
